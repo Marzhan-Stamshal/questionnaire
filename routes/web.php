@@ -31,7 +31,7 @@ use App\Http\Controllers\Admin\ExportController;
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', function () {
         return redirect()->route('admin.surveys.index');
-    })->name('dashboard');
+    })->name('dashboard1');
 
     Route::resource('groups', GroupController::class);
     Route::resource('teachers', TeacherController::class);
