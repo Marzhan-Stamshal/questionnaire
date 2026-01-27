@@ -51,7 +51,7 @@ class SurveyTemplateController extends Controller
             'description' => 'nullable|string',
             'is_active' => 'nullable',
         ]);
-        dd($request);
+        // dd($request);
 
         $data['is_active'] = $request->has('is_active');
 
