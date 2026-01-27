@@ -41,8 +41,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('reports/teachers', [TeacherReportController::class, 'index'])->name('reports.teachers.index');
     Route::get('reports/teachers/{teacher}', [TeacherReportController::class, 'show'])->name('reports.teachers.show');
 
-    Route::resource('templates', SurveyTemplateController::class);
-    Route::resource('surveys', SurveyController::class);
+    Route::resource('templates', SurveyTemplateController::class)->except(['show']);
+    Route::resource('surveys', SurveyController::class)->except(['show']);
     Route::post('templates/{template}/questions', [SurveyQuestionController::class, 'store'])->name('templates.questions.store');
     Route::put('questions/{question}', [SurveyQuestionController::class, 'update'])->name('questions.update');
     Route::delete('questions/{question}', [SurveyQuestionController::class, 'destroy'])->name('questions.destroy');
@@ -95,8 +95,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 Route::get('/s/{token}', [PublicSurveyController::class, 'show'])->name('public.survey.show');
 Route::post('/s/{token}', [PublicSurveyController::class, 'submit'])->name('public.survey.submit');
 
-Route::get('/survey', [PublicSurveyController::class, 'chooseGroup'])->name('public.survey.choose');
+// Route::get('/survey', [PublicSurveyController::class, 'chooseGroup'])->name('public.survey.choose');
 Route::post('/survey', [PublicSurveyController::class, 'goToSurvey'])->name('public.survey.goto');
 
+
+Route::get('/survey', [PublicSurveyController::class, 'chooseGroup'])->name('public.chooseGroup');
+Route::post('/survey/go', [PublicSurveyController::class, 'goToSurvey'])->name('public.goToSurvey');
+
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/', fn() => redirect()->route('public.chooseGroup'));
+
 Auth::routes();

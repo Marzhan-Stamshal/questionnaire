@@ -17,6 +17,10 @@ class Survey extends Model
         'ends_at',
         'public_token'
     ];
+    protected $casts = [
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
+    ];
 
     public function template()
     {

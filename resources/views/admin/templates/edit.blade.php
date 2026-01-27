@@ -69,22 +69,55 @@
 
                         <div class="col-md-2">
                             <label class="form-label">Тип *</label>
-                            <select name="type" class="form-select" required>
-                                <option value="scale_0_10">scale_0_10</option>
-                                <option value="yes_no">yes_no</option>
-                                <option value="text">text</option>
-                                <option value="yes_no_with_text">yes_no_with_text</option>
-                                <option value="single_choice">single_choice</option>
-                                <option value="multiple_choice">multiple_choice</option>
-
+                            <select name="type" id="question_type" class="form-select" required>
+                                <option value="scale_0_10">Шкала 0–10 (оценка)</option>
+                                <option value="yes_no">Да / Нет</option>
+                                <option value="text">Текстовый ответ</option>
+                                <option value="yes_no_with_text">Да / Нет + комментарий</option>
+                                <option value="single_choice">Один вариант из списка</option>
+                                <option value="multiple_choice">Несколько вариантов из списка</option>
                             </select>
+
                         </div>
-                        <div class="col-md-12 mt-2">
-                            <label class="form-label">Варианты (для single_choice / multiple_choice)</label>
+                        {{-- <div class="col-md-12 mt-2">
+                            <label class="form-label">Варианты ответа</label>
                             <textarea name="options_text" class="form-control" rows="4"
-                                placeholder="Каждая строка — один вариант.&#10;Например:&#10;Очень доволен&#10;Нормально&#10;Плохо"></textarea>
-                            <div class="form-text">Если нужно “value|label”: пишите так: <b>A|Очень доволен</b></div>
+                                placeholder="Введите варианты ответов (каждый вариант с новой строки).
+Например:
+Отлично
+Хорошо
+Средне
+Плохо"></textarea>
+
+                            <div class="form-text">
+                                Каждый вариант пишите с новой строки. Эти варианты появятся у студентов как готовые ответы.
+                            </div>
+
+                            <div class="form-text">
+                                (Необязательно) Можно указать код и текст через символ <b>|</b>, например: <b>A|Отлично</b>
+                            </div>
+                        </div> --}}
+
+
+                        <div class="col-md-12 mt-2" id="options_block" style="display:none;">
+                            <label class="form-label">Варианты ответа</label>
+                            <textarea name="options_text" class="form-control" rows="4"
+                                placeholder="Введите варианты ответов (каждый вариант с новой строки).
+Например:
+Отлично
+Хорошо
+Средне
+Плохо"></textarea>
+
+                            <div class="form-text">
+                                Каждый вариант пишите с новой строки. Эти варианты появятся у студентов как готовые ответы.
+                            </div>
+
+                            <div class="form-text">
+                                (Необязательно) Можно указать код и текст через символ <b>|</b>, например: <b>A|Отлично</b>
+                            </div>
                         </div>
+
 
                         <div class="col-md-2">
                             <label class="form-label">Сортировка *</label>
@@ -94,18 +127,20 @@
                         <div class="col-md-3">
                             <label class="form-label">Цель *</label>
                             <select name="target" class="form-select" required>
-                                <option value="teacher">teacher</option>
-                                <option value="survey">survey</option>
+                                <option value="teacher">Преподаватель (вопрос о конкретном преподавателе)</option>
+                                <option value="survey">Анкета / группа (общий вопрос)</option>
                             </select>
+
                         </div>
 
                         <div class="col-md-3">
                             <label class="form-label">Режим *</label>
                             <select name="render_mode" class="form-select" required>
-                                <option value="matrix">matrix</option>
-                                <option value="single">single</option>
-                                <option value="per_teacher">per_teacher</option>
+                                <option value="single">Обычный вопрос (1 раз на всю анкету)</option>
+                                <option value="matrix">Матрица оценок (по каждому преподавателю)</option>
+                                <option value="per_teacher">Блок по преподавателю (вопросы для каждого)</option>
                             </select>
+
                         </div>
 
                         <div class="col-md-3 d-flex align-items-center">
@@ -174,4 +209,27 @@
         </div>
 
     </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const typeSelect = document.getElementById("question_type");
+            const optionsBlock = document.getElementById("options_block");
+
+            function toggleOptionsBlock() {
+                const value = typeSelect.value;
+
+                if (value === "single_choice" || value === "multiple_choice") {
+                    optionsBlock.style.display = "block";
+                } else {
+                    optionsBlock.style.display = "none";
+                }
+            }
+
+            // при изменении select
+            typeSelect.addEventListener("change", toggleOptionsBlock);
+
+            // при загрузке страницы (если уже выбрано)
+            toggleOptionsBlock();
+        });
+    </script>
+
 @endsection

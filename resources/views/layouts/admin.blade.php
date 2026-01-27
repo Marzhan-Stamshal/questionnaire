@@ -15,14 +15,14 @@
         {{-- Sidebar --}}
         <div class="bg-dark text-white p-3" style="width: 260px;">
             <div class="mb-3">
-                <div class="fw-bold">Teacher Survey</div>
+                <div class="fw-bold">Анонимные анкеты для оценки преподователей</div>
                 <div class="small text-white-50">Админ-панель</div>
             </div>
 
             <div class="list-group list-group-flush">
                 <a class="list-group-item list-group-item-action {{ request()->is('admin/dashboard') ? 'active' : '' }}"
                     href="{{ route('admin.dashboard') }}">
-                    📌 Dashboard
+                    📌 Главная
                 </a>
 
                 <a class="list-group-item list-group-item-action {{ request()->is('admin/surveys*') ? 'active' : '' }}"
@@ -53,6 +53,10 @@
                 <a class="list-group-item list-group-item-action {{ request()->is('admin/teachers*') ? 'active' : '' }}"
                     href="{{ route('admin.teachers.index') }}">
                     👨‍🏫 Преподаватели
+                </a>
+                <a class="list-group-item list-group-item-action {{ request()->is('admin/assignments*') ? 'active' : '' }}"
+                    href="{{ route('admin.assignments.index') }}">
+                    🔗 Связи (Группа ↔ Преподаватель)
                 </a>
             </div>
 

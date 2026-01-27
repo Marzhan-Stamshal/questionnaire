@@ -5,7 +5,7 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h3>Анкеты (по группам)</h3>
-            <a href="{{ route('admin.surveys.bulk.create') }}" class="btn btn-dark">⚡ Массово</a>
+            <a href="{{ route('admin.surveys.bulk.create') }}" class="btn btn-dark">⚡ Массово создать для всех групп</a>
 
             <a href="{{ route('admin.surveys.create') }}" class="btn btn-primary">+ Создать</a>
         </div>

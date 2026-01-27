@@ -270,6 +270,32 @@ class PublicSurveyController extends Controller
     }
 
 
+    // public function chooseGroup()
+    // {
+    //     $groups = Group::where('active', 1)->orderBy('name')->get();
+    //     return view('public.choose-group', compact('groups'));
+    // }
+
+    // public function goToSurvey(Request $request)
+    // {
+    //     $data = $request->validate([
+    //         'group_id' => 'required|exists:groups,id',
+    //     ]);
+
+    //     $groupId = (int)$data['group_id'];
+
+    //     // Берём последнюю активную анкету для группы
+    //     $survey = \App\Models\Survey::where('group_id', $groupId)
+    //         ->where('status', 'active')
+    //         ->orderByDesc('id')
+    //         ->first();
+
+    //     if (!$survey) {
+    //         return back()->with('error', 'Для выбранной группы нет активной анкеты. Обратитесь к администратору.');
+    //     }
+
+    //     return redirect()->route('public.survey.show', $survey->public_token);
+    // }
     public function chooseGroup()
     {
         $groups = Group::where('active', 1)->orderBy('name')->get();
@@ -284,8 +310,7 @@ class PublicSurveyController extends Controller
 
         $groupId = (int)$data['group_id'];
 
-        // Берём последнюю активную анкету для группы
-        $survey = \App\Models\Survey::where('group_id', $groupId)
+        $survey = Survey::where('group_id', $groupId)
             ->where('status', 'active')
             ->orderByDesc('id')
             ->first();
