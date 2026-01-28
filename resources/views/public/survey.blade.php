@@ -343,7 +343,7 @@
             @endif
 
             <div class="d-grid">
-                <button class="btn btn-primary btn-lg">Отправить анкету</button>
+                <button class="btn btn-primary btn-lg">Жіберу/Отправить</button>
             </div>
 
         </form>
