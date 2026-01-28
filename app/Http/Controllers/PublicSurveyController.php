@@ -32,23 +32,17 @@ class PublicSurveyController extends Controller
         }
 
         if ($survey->ends_at && $now->gt($survey->ends_at)) {
-            // можно просто показать страницу
             return view('public.survey-ended', compact('survey'));
-
-            // или дополнительно закрывать:
-            // $survey->update(['status' => 'closed']);
-            // return view('public.survey-ended', compact('survey'));
         }
+
         $sessionCookieKey = 'survey_session_' . $survey->id;
         $sessionId = request()->cookie($sessionCookieKey);
-
         if (!$sessionId) {
-            $sessionId = (string) Str::uuid();
+            $sessionId = (string) \Illuminate\Support\Str::uuid();
         }
 
-        $cookieKey = 'survey_submitted_' . $survey->id;
-
-        if (request()->cookie($cookieKey)) {
+        $submittedCookieKey = 'survey_submitted_' . $survey->id;
+        if (request()->cookie($submittedCookieKey)) {
             return view('public.already-submitted', compact('survey'));
         }
 
@@ -59,33 +53,61 @@ class PublicSurveyController extends Controller
             ->unique('id')
             ->values();
 
-        // $questions = SurveyQuestion::where('template_id', $survey->template_id)
-        //     ->where('is_active', 1)
-        //     ->orderBy('sort_order')
-        //     ->get();
         $questions = SurveyQuestion::with('options')
             ->where('template_id', $survey->template_id)
             ->where('is_active', 1)
             ->orderBy('sort_order')
             ->get();
 
-
-        $singleQuestions = $questions->where('render_mode', 'single')->values();
-        $matrixQuestions = $questions->where('render_mode', 'matrix')->values();
+        // 1) per_teacher оставим отдельно (как у тебя было)
         $perTeacherQuestions = $questions->where('render_mode', 'per_teacher')->values();
+
+        // 2) single + matrix — делаем “до первой матрицы / матрица / после матрицы”
+        $singleBefore = collect();
+        $singleAfter  = collect();
+        $matrixQuestions = collect();
+
+        $seenFirstMatrix = false;
+
+        foreach ($questions as $q) {
+            if ($q->render_mode === 'per_teacher') {
+                continue;
+            }
+
+            if ($q->render_mode === 'matrix') {
+                $seenFirstMatrix = true;
+                $matrixQuestions->push($q);
+                continue;
+            }
+
+            // всё что НЕ matrix и НЕ per_teacher считаем “обычными”
+            if (!$seenFirstMatrix) {
+                $singleBefore->push($q);
+            } else {
+                $singleAfter->push($q);
+            }
+        }
+        $matrixScale = $matrixQuestions->whereIn('type', ['scale_0_10'])->values();
+        $matrixYesNo = $matrixQuestions->whereIn('type', ['yes_no'])->values();
+
+        // если у тебя шкала 0-100 хранится тоже как scale_0_10 — ок,
+        // иначе добавь свой тип сюда (например 'scale_0_100')
 
         $response = response()->view('public.survey', compact(
             'survey',
             'teachers',
-            'singleQuestions',
+            'singleBefore',
             'matrixQuestions',
+            'matrixScale',
+            'matrixYesNo',
+            'singleAfter',
             'perTeacherQuestions',
             'sessionId'
         ));
 
-        return $response->cookie($sessionCookieKey, $sessionId, 60 * 24 * 30); // 30 дней
-
+        return $response->cookie($sessionCookieKey, $sessionId, 60 * 24 * 30);
     }
+
 
 
     public function submit(Request $request, $token)
@@ -95,11 +117,13 @@ class PublicSurveyController extends Controller
         $sessionId = $request->cookie($sessionCookieKey);
 
         if (!$sessionId) {
-            $sessionId = (string) Str::uuid(); // если cookie вдруг не было
+            $sessionId = (string) Str::uuid();
         }
+
         if ($survey->status !== 'active') {
             abort(403, 'Анкета не активна.');
         }
+
         $now = now();
 
         if ($survey->starts_at && $now->lt($survey->starts_at)) {
@@ -109,7 +133,6 @@ class PublicSurveyController extends Controller
         if ($survey->ends_at && $now->gt($survey->ends_at)) {
             abort(403, 'Анкетирование завершено.');
         }
-
 
         $questions = SurveyQuestion::where('template_id', $survey->template_id)
             ->where('is_active', 1)
@@ -128,8 +151,9 @@ class PublicSurveyController extends Controller
                 'submitted_at' => now(),
             ]);
 
-            // 1) Single вопросы (без teacher_id)
-            // 1) Single вопросы (без teacher_id)
+            /**
+             * 1) SINGLE (без teacher_id)
+             */
             foreach ($questions->where('render_mode', 'single') as $q) {
 
                 $valueInt = null;
@@ -150,7 +174,6 @@ class PublicSurveyController extends Controller
                         $valueText = json_encode(array_values($arr), JSON_UNESCAPED_UNICODE);
                     }
                 } else {
-                    // на будущее: если появятся новые типы
                     $valueText = $request->input("single.{$q->id}");
                 }
 
@@ -164,16 +187,52 @@ class PublicSurveyController extends Controller
                     'group_id' => $survey->group_id,
                     'question_id' => $q->id,
                     'teacher_id' => null,
-                    'value_int' => ($valueInt === '' ? null : (is_numeric($valueInt) ? (int)$valueInt : null)),
-                    'value_text' => ($valueText === '' ? null : (string)$valueText),
+                    'value_int' => ($valueInt === '' ? null : (is_numeric($valueInt) ? (int) $valueInt : null)),
+                    'value_text' => ($valueText === '' ? null : (string) $valueText),
                 ]);
             }
 
+            /**
+             * 2) MATRIX (teacher_id обязателен)
+             *
+             * Поддержка:
+             * - scale (0..100) -> matrix[qid][teacher]
+             * - yes_no (1/0)   -> matrix[qid][teacher]
+             * - yes_no_with_text:
+             *      matrix_yesno[qid][teacher]
+             *      matrix_text[qid][teacher]
+             */
+            $matrixYesNo = $request->input('matrix_yesno', []); // [qid][teacher] => 1/0
+            $matrixText  = $request->input('matrix_text', []);  // [qid][teacher] => comment
 
-            // 2) Matrix вопросы (teacher_id обязателен)
             foreach ($questions->where('render_mode', 'matrix') as $q) {
+
+                // 2.1) matrix yes_no_with_text
+                if ($q->type === 'yes_no_with_text') {
+                    $ynMap = $matrixYesNo[$q->id] ?? [];
+                    $txMap = $matrixText[$q->id] ?? [];
+
+                    foreach ($ynMap as $teacherId => $yn) {
+                        if ($yn === null || $yn === '') continue;
+
+                        $comment = $txMap[$teacherId] ?? null;
+
+                        Response::create([
+                            'respondent_session_id' => $session->id,
+                            'survey_id' => $survey->id,
+                            'group_id' => $survey->group_id,
+                            'question_id' => $q->id,
+                            'teacher_id' => (int) $teacherId,
+                            'value_int' => (int) $yn,
+                            'value_text' => ($comment === '' ? null : $comment),
+                        ]);
+                    }
+
+                    continue; // важно: не падать дальше в обычную matrix-обработку
+                }
+
+                // 2.2) matrix scale / yes_no (оба приходят из matrix[qid][teacher])
                 $teachersAnswers = $request->input("matrix.{$q->id}", []);
-                // matrix[qid][teacher_id] = value
 
                 foreach ($teachersAnswers as $teacherId => $val) {
                     if ($val === null || $val === '') continue;
@@ -183,13 +242,16 @@ class PublicSurveyController extends Controller
                         'survey_id' => $survey->id,
                         'group_id' => $survey->group_id,
                         'question_id' => $q->id,
-                        'teacher_id' => $teacherId,
-                        'value_int' => (int)$val,
+                        'teacher_id' => (int) $teacherId,
+                        'value_int' => is_numeric($val) ? (int) $val : null,
                         'value_text' => null,
                     ]);
                 }
             }
-            // per_teacher[text or yes_no] -> per_teacher[teacher_id][question_id]
+
+            /**
+             * 3) per_teacher[text or yes_no] -> per_teacher[teacher_id][question_id]
+             */
             $perTeacher = $request->input('per_teacher', []);
             foreach ($perTeacher as $teacherId => $qMap) {
                 foreach ($qMap as $questionId => $value) {
@@ -198,18 +260,20 @@ class PublicSurveyController extends Controller
                     Response::create([
                         'survey_id' => $survey->id,
                         'group_id' => $survey->group_id,
-                        'question_id' => (int)$questionId,
-                        'teacher_id' => (int)$teacherId,
-                        'respondent_session_id' =>  $session->id,
-                        'value_int' => is_numeric($value) ? (int)$value : null,
-                        'value_text' => !is_numeric($value) ? (string)$value : null,
+                        'question_id' => (int) $questionId,
+                        'teacher_id' => (int) $teacherId,
+                        'respondent_session_id' => $session->id,
+                        'value_int' => is_numeric($value) ? (int) $value : null,
+                        'value_text' => !is_numeric($value) ? (string) $value : null,
                     ]);
                 }
             }
 
-            // per_teacher yes/no + text
+            /**
+             * 4) per_teacher yes/no + text
+             */
             $perTeacherYesNo = $request->input('per_teacher_yesno', []);
-            $perTeacherText = $request->input('per_teacher_text', []);
+            $perTeacherText  = $request->input('per_teacher_text', []);
 
             foreach ($perTeacherYesNo as $teacherId => $qMap) {
                 foreach ($qMap as $questionId => $yn) {
@@ -220,14 +284,18 @@ class PublicSurveyController extends Controller
                     Response::create([
                         'survey_id' => $survey->id,
                         'group_id' => $survey->group_id,
-                        'question_id' => (int)$questionId,
-                        'teacher_id' => (int)$teacherId,
+                        'question_id' => (int) $questionId,
+                        'teacher_id' => (int) $teacherId,
                         'respondent_session_id' => $session->id,
-                        'value_int' => (int)$yn,
+                        'value_int' => (int) $yn,
                         'value_text' => ($comment === '' ? null : $comment),
                     ]);
                 }
             }
+
+            /**
+             * 5) per_teacher single_choice
+             */
             $perTeacherChoice = $request->input('per_teacher_choice', []);
             foreach ($perTeacherChoice as $teacherId => $qMap) {
                 foreach ($qMap as $questionId => $val) {
@@ -236,14 +304,18 @@ class PublicSurveyController extends Controller
                     Response::create([
                         'survey_id' => $survey->id,
                         'group_id' => $survey->group_id,
-                        'question_id' => (int)$questionId,
-                        'teacher_id' => (int)$teacherId,
+                        'question_id' => (int) $questionId,
+                        'teacher_id' => (int) $teacherId,
                         'respondent_session_id' => $session->id,
                         'value_int' => null,
-                        'value_text' => (string)$val,
+                        'value_text' => (string) $val,
                     ]);
                 }
             }
+
+            /**
+             * 6) per_teacher multiple_choice
+             */
             $perTeacherMulti = $request->input('per_teacher_multi', []);
             foreach ($perTeacherMulti as $teacherId => $qMap) {
                 foreach ($qMap as $questionId => $arr) {
@@ -252,8 +324,8 @@ class PublicSurveyController extends Controller
                     Response::create([
                         'survey_id' => $survey->id,
                         'group_id' => $survey->group_id,
-                        'question_id' => (int)$questionId,
-                        'teacher_id' => (int)$teacherId,
+                        'question_id' => (int) $questionId,
+                        'teacher_id' => (int) $teacherId,
                         'respondent_session_id' => $session->id,
                         'value_int' => null,
                         'value_text' => json_encode(array_values($arr), JSON_UNESCAPED_UNICODE),
@@ -268,6 +340,7 @@ class PublicSurveyController extends Controller
             ->with('success', 'Спасибо! Анкета отправлена ✅')
             ->cookie($submittedKey, '1', 60 * 24 * 365);
     }
+
 
 
     // public function chooseGroup()
