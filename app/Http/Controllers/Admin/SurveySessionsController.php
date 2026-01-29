@@ -26,7 +26,7 @@ class SurveySessionsController extends Controller
 
     public function show(Survey $survey, RespondentSession $session)
     {
-        abort_if($session->survey_id !== $survey->id, 404);
+        //abort_if($session->survey_id !== $survey->id, 404);
 
         $responses = Response::with(['question', 'teacher'])
             ->where('survey_id', $survey->id)
