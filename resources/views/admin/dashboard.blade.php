@@ -45,20 +45,13 @@
         </div>
 
         <div class="row g-3 mb-3">
-            <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="text-muted">Уникальных “ответов” (сессий)</div>
-                        <div class="fs-3 fw-bold">{{ $uniqueSessions }}</div>
-                    </div>
-                </div>
-            </div>
+
 
             <div class="col-md-4">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <div class="text-muted">Ответов сегодня</div>
-                        <div class="fs-3 fw-bold">{{ $todayResponses }}</div>
+                        <div class="text-muted">Ответили</div>
+                        <div class="fs-3 fw-bold">{{ $uniqueSessions }}</div>
                     </div>
                 </div>
             </div>
@@ -86,7 +79,7 @@
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between">
                                         <div><b>{{ $row['teacher']->fio }}</b></div>
-                                        <div>{{ $row['avg_score'] }} / 10 (n={{ $row['answers_count'] }})</div>
+                                        <div>{{ $row['avg_score'] }} / 100 (n={{ $row['answers_count'] }})</div>
                                     </div>
                                     <div class="progress" style="height: 18px;">
                                         <div class="progress-bar" style="width: {{ $p }}%;"></div>

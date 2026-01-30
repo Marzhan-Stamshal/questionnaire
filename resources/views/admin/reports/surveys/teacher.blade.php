@@ -26,7 +26,7 @@
                     @php $percent = min(100, max(0, ($overall / 10) * 100)); @endphp
 
                     <div class="d-flex justify-content-between">
-                        <div><b>{{ $overall }}</b> / 10</div>
+                        <div><b>{{ $overall }}</b> / 100</div>
                         <div class="text-muted">ответов: {{ $overallCount }}</div>
                     </div>
 

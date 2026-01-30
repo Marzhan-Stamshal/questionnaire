@@ -87,7 +87,7 @@
                                 @endphp
                                 <tr>
                                     <td><b>{{ $row['question']->code }}</b> — {{ $row['question']->text }}</td>
-                                    <td class="text-center"><b>{{ $avg }}</b> / 10</td>
+                                    <td class="text-center"><b>{{ $avg }}</b> / 100</td>
                                     <td class="text-center">{{ $row['answers_count'] }}</td>
                                     <td>
                                         <div class="progress" style="height: 22px;">

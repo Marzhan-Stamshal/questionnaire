@@ -104,7 +104,7 @@
                                 <tr>
                                     <td>{{ $i + 1 }}</td>
                                     <td><b>{{ $row['teacher']->fio }}</b></td>
-                                    <td class="text-center"><b>{{ $row['avg_score'] }}</b> / 10</td>
+                                    <td class="text-center"><b>{{ $row['avg_score'] }}</b> / 100</td>
                                     <td class="text-center">{{ $row['answers_count'] }}</td>
                                     <td>
                                         <div class="progress" style="height: 22px;">
