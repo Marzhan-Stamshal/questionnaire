@@ -4,22 +4,23 @@
 @section('content')
     <div class="container">
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="page-head">
             <div>
-                <h3>👨‍🏫 {{ $teacher->fio }}</h3>
-                <div class="text-muted">{{ $teacher->department }}</div>
+                <h3 class="page-title">{{ $teacher->fio }}</h3>
+                <div class="page-subtitle">{{ $teacher->department }}</div>
             </div>
-
-            <a href="{{ route('admin.reports.teachers.index') }}" class="btn btn-secondary">
-                ← Назад к рейтингу
-            </a>
-            <a class="btn btn-success" href="{{ route('admin.reports.teachers.exportDetail', $teacher->id) }}">
-                ⬇ Экспорт CSV
-            </a>
+            <div class="d-flex gap-2">
+                <a href="{{ route('admin.reports.teachers.index') }}" class="btn btn-secondary">
+                    ← Назад к рейтингу
+                </a>
+                <a class="btn btn-success" href="{{ route('admin.reports.teachers.exportDetail', $teacher->id) }}">
+                    ⬇ Экспорт CSV
+                </a>
+            </div>
 
         </div>
 
-        <div class="card shadow-sm mb-3">
+        <div class="card soft-card mb-3">
             <div class="card-body">
                 <h5 class="mb-2">Общий средний балл</h5>
 
@@ -46,15 +47,15 @@
             </div>
         </div>
 
-        <div class="card shadow-sm">
+        <div class="card soft-card">
             <div class="card-header"><b>Средние по вопросам</b></div>
             <div class="card-body table-responsive">
 
                 @if ($perQuestionResult->count() === 0)
                     <div class="alert alert-warning mb-0">Нет данных</div>
                 @else
-                    <table class="table table-bordered align-middle">
-                        <thead class="table-light">
+                    <table class="table table-clean align-middle">
+                        <thead>
                             <tr>
                                 <th>Вопрос</th>
                                 <th style="width:140px;">Средний</th>

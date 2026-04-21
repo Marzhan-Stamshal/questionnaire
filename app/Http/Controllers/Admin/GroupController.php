@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class GroupController extends Controller
 {
@@ -23,6 +24,7 @@ class GroupController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255|unique:groups,name',
+            'kind' => ['required', Rule::in(Group::allowedKinds())],
             'faculty' => 'nullable|string|max:255',
             'program' => 'nullable|string|max:255',
             'course' => 'nullable|integer|min:1|max:7',
@@ -45,6 +47,7 @@ class GroupController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255|unique:groups,name,' . $group->id,
+            'kind' => ['required', Rule::in(Group::allowedKinds())],
             'faculty' => 'nullable|string|max:255',
             'program' => 'nullable|string|max:255',
             'course' => 'nullable|integer|min:1|max:7',

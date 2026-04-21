@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyTemplate;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class SurveyQuestionController extends Controller
 {
@@ -14,9 +15,9 @@ class SurveyQuestionController extends Controller
         $data = $request->validate([
             'code' => 'nullable|string|max:50',
             'text' => 'required|string',
-            'type' => 'required|string|max:30',
-            'target' => 'required|string|max:20',
-            'render_mode' => 'required|string|max:20',
+            'type' => ['required', 'string', Rule::in(SurveyQuestion::allowedTypes())],
+            'target' => ['required', 'string', Rule::in(SurveyQuestion::allowedTargets())],
+            'render_mode' => ['required', 'string', Rule::in(SurveyQuestion::allowedRenderModes())],
             'sort_order' => 'required|integer|min:0|max:9999',
             'is_required' => 'nullable',
             'is_active' => 'nullable',
@@ -67,9 +68,9 @@ class SurveyQuestionController extends Controller
         $data = $request->validate([
             'code' => 'nullable|string|max:50',
             'text' => 'required|string',
-            'type' => 'required|string|max:30',
-            'target' => 'required|string|max:20',
-            'render_mode' => 'required|string|max:20',
+            'type' => ['required', 'string', Rule::in(SurveyQuestion::allowedTypes())],
+            'target' => ['required', 'string', Rule::in(SurveyQuestion::allowedTargets())],
+            'render_mode' => ['required', 'string', Rule::in(SurveyQuestion::allowedRenderModes())],
             'sort_order' => 'required|integer|min:0|max:9999',
             'is_required' => 'nullable',
             'is_active' => 'nullable',

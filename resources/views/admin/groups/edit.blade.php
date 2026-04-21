@@ -26,6 +26,14 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label">Тип *</label>
+                        <select name="kind" class="form-select" required>
+                            <option value="cycle" {{ old('kind', $group->kind) === 'cycle' ? 'selected' : '' }}>Цикл</option>
+                            <option value="group" {{ old('kind', $group->kind) === 'group' ? 'selected' : '' }}>Группа</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label">Факультет</label>
                         <input name="faculty" class="form-control" value="{{ $group->faculty }}">
                     </div>

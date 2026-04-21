@@ -11,6 +11,36 @@ use Illuminate\Http\Request;
 
 class SurveyReportController extends Controller
 {
+    private function isRiskQuestion(SurveyQuestion $question): bool
+    {
+        if (!in_array($question->type, ['yes_no', 'yes_no_with_text'], true)) {
+            return false;
+        }
+
+        $text = mb_strtolower(trim((string) $question->text));
+        $keywords = [
+            'вымог',
+            'взят',
+            'домог',
+            'корруп',
+            'неофициаль',
+            'шантаж',
+            'угроз',
+            'принуж',
+            'незакон',
+            'сақа',
+            'пара',
+        ];
+
+        foreach ($keywords as $word) {
+            if (mb_strpos($text, $word) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function show(Survey $survey)
     {
         $survey->load(['group', 'template']);
@@ -62,6 +92,171 @@ class SurveyReportController extends Controller
             'teacherResult',
             'questionResult'
         ));
+    }
+
+    public function answers(Survey $survey, Request $request)
+    {
+        $survey->load(['group', 'template']);
+
+        $questionId = $request->filled('question_id') ? (int) $request->input('question_id') : null;
+        $teacherId = $request->filled('teacher_id') ? (int) $request->input('teacher_id') : null;
+        $onlyYes = $request->boolean('only_yes');
+
+        $questions = SurveyQuestion::query()
+            ->where('template_id', $survey->template_id)
+            ->where('is_active', 1)
+            ->orderBy('sort_order')
+            ->get();
+
+        $questionIds = $questions->pluck('id');
+
+        if ($questionId && !$questionIds->contains($questionId)) {
+            abort(404);
+        }
+
+        $teachers = \App\Models\TeachingAssignment::where('group_id', $survey->group_id)
+            ->with('teacher')
+            ->get()
+            ->pluck('teacher')
+            ->filter()
+            ->unique('id')
+            ->sortBy('fio')
+            ->values();
+
+        $teacherIds = $teachers->pluck('id');
+        if ($teacherId && !$teacherIds->contains($teacherId)) {
+            abort(404);
+        }
+
+        $query = Response::query()
+            ->with(['question', 'teacher', 'respondentSession'])
+            ->where('survey_id', $survey->id)
+            ->when($questionId, fn($q) => $q->where('question_id', $questionId))
+            ->when($teacherId, fn($q) => $q->where('teacher_id', $teacherId))
+            ->when($onlyYes, fn($q) => $q->where('value_int', 1))
+            ->orderByDesc('id');
+
+        $rows = $query->paginate(100)->withQueryString();
+
+        $selectedQuestion = $questionId ? $questions->firstWhere('id', $questionId) : null;
+
+        $questionStats = null;
+        if ($selectedQuestion && in_array($selectedQuestion->type, ['yes_no', 'yes_no_with_text'])) {
+            $statQuery = Response::query()
+                ->where('survey_id', $survey->id)
+                ->where('question_id', $selectedQuestion->id)
+                ->when($teacherId, fn($q) => $q->where('teacher_id', $teacherId));
+
+            $total = (int)$statQuery->count();
+            $yes = (int)(clone $statQuery)->where('value_int', 1)->count();
+            $no = (int)(clone $statQuery)->where('value_int', 0)->count();
+
+            $questionStats = [
+                'total' => $total,
+                'yes' => $yes,
+                'no' => $no,
+                'yes_percent' => $total > 0 ? round(($yes / $total) * 100, 1) : 0,
+            ];
+        }
+
+        return view('admin.reports.surveys.answers', compact(
+            'survey',
+            'rows',
+            'questions',
+            'teachers',
+            'questionId',
+            'teacherId',
+            'onlyYes',
+            'selectedQuestion',
+            'questionStats'
+        ));
+    }
+
+    public function risks(Survey $survey)
+    {
+        $survey->load(['group', 'template']);
+
+        $templateQuestions = SurveyQuestion::query()
+            ->where('template_id', $survey->template_id)
+            ->where('is_active', 1)
+            ->orderBy('sort_order')
+            ->get();
+
+        $riskQuestions = $templateQuestions
+            ->filter(fn($q) => $this->isRiskQuestion($q))
+            ->values();
+
+        $riskQuestionIds = $riskQuestions->pluck('id')->toArray();
+
+        if (empty($riskQuestionIds)) {
+            return view('admin.reports.surveys.risks', [
+                'survey' => $survey,
+                'riskQuestions' => collect(),
+                'rows' => collect(),
+                'totals' => ['yes' => 0, 'all' => 0, 'share' => 0],
+            ]);
+        }
+
+        $summaryRows = Response::query()
+            ->selectRaw('question_id, teacher_id, SUM(CASE WHEN value_int = 1 THEN 1 ELSE 0 END) as yes_count, COUNT(*) as total_count')
+            ->where('survey_id', $survey->id)
+            ->whereIn('question_id', $riskQuestionIds)
+            ->whereNotNull('value_int')
+            ->groupBy('question_id', 'teacher_id')
+            ->orderByDesc('yes_count')
+            ->orderByDesc('total_count')
+            ->get();
+
+        $teacherIds = $summaryRows->pluck('teacher_id')->filter()->unique()->toArray();
+        $teachers = Teacher::whereIn('id', $teacherIds)->get()->keyBy('id');
+        $questionsById = $riskQuestions->keyBy('id');
+
+        $rows = $summaryRows->map(function ($row) use ($teachers, $questionsById) {
+            $question = $questionsById[$row->question_id] ?? null;
+            if (!$question) {
+                return null;
+            }
+
+            $total = (int)$row->total_count;
+            $yes = (int)$row->yes_count;
+
+            return [
+                'question' => $question,
+                'teacher' => $row->teacher_id ? ($teachers[$row->teacher_id] ?? null) : null,
+                'yes_count' => $yes,
+                'total_count' => $total,
+                'yes_share' => $total > 0 ? round(($yes / $total) * 100, 1) : 0,
+            ];
+        })->filter()->values();
+
+        $recentYes = Response::query()
+            ->with(['question', 'teacher', 'respondentSession'])
+            ->where('survey_id', $survey->id)
+            ->whereIn('question_id', $riskQuestionIds)
+            ->where('value_int', 1)
+            ->orderByDesc('id')
+            ->limit(200)
+            ->get();
+
+        $allRiskAnswers = Response::query()
+            ->where('survey_id', $survey->id)
+            ->whereIn('question_id', $riskQuestionIds)
+            ->whereNotNull('value_int');
+
+        $allCount = (clone $allRiskAnswers)->count();
+        $yesCount = (clone $allRiskAnswers)->where('value_int', 1)->count();
+
+        return view('admin.reports.surveys.risks', [
+            'survey' => $survey,
+            'riskQuestions' => $riskQuestions,
+            'rows' => $rows,
+            'recentYes' => $recentYes,
+            'totals' => [
+                'yes' => (int)$yesCount,
+                'all' => (int)$allCount,
+                'share' => $allCount > 0 ? round(($yesCount / $allCount) * 100, 1) : 0,
+            ],
+        ]);
     }
 
     public function exportRaw(Survey $survey)

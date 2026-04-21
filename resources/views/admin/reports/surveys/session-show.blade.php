@@ -3,19 +3,19 @@
 
 @section('content')
     <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="page-head">
             <div>
-                <h4 class="mb-0">Анкета #{{ $survey->id }} — сессия #{{ $session->id }}</h4>
-                <div class="text-muted">Отправлено: <b>{{ $session->submitted_at }}</b></div>
+                <h4 class="page-title">Анкета #{{ $survey->id }} — сессия #{{ $session->id }}</h4>
+                <div class="page-subtitle">Отправлено: <b>{{ $session->submitted_at }}</b></div>
             </div>
             <a class="btn btn-secondary" href="{{ route('admin.reports.surveys.sessions', $survey->id) }}">← К списку
                 сессий</a>
         </div>
 
-        <div class="card shadow-sm">
+        <div class="card soft-card">
             <div class="card-body">
                 @foreach ($responses as $r)
-                    <div class="border rounded p-3 mb-2">
+                    <div class="soft-card p-3 mb-2">
                         <div class="small text-muted">
                             Вопрос #{{ $r->question_id }} @if ($r->teacher)
                                 | Преподаватель: <b>{{ $r->teacher->fio }}</b>

@@ -3,19 +3,19 @@
 
 @section('content')
     <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="page-head">
             <div>
-                <h4 class="mb-0">Сессии анкеты #{{ $survey->id }}</h4>
-                <div class="text-muted">Группа: <b>{{ $survey->group->name ?? '' }}</b> | Шаблон:
+                <h4 class="page-title">Сессии анкеты #{{ $survey->id }}</h4>
+                <div class="page-subtitle">Группа: <b>{{ $survey->group->name ?? '' }}</b> | Шаблон:
                     <b>{{ $survey->template->title ?? '' }}</b></div>
             </div>
             <a class="btn btn-secondary" href="{{ url()->previous() }}">← Назад</a>
         </div>
 
-        <div class="card shadow-sm">
+        <div class="card soft-card">
             <div class="card-body table-responsive">
-                <table class="table table-bordered align-middle">
-                    <thead class="table-light">
+                <table class="table table-clean align-middle">
+                    <thead>
                         <tr>
                             <th>ID сессии</th>
                             <th>Когда отправлено</th>

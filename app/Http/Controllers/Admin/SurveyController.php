@@ -8,6 +8,7 @@ use App\Models\Survey;
 use App\Models\SurveyTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class SurveyController extends Controller
 {
@@ -35,9 +36,9 @@ class SurveyController extends Controller
             'group_id' => 'required|exists:groups,id',
             'year' => 'nullable|integer|min:2000|max:2100',
             'semester' => 'nullable|string|max:50',
-            'status' => 'required|string|in:draft,active,closed',
+            'status' => ['required', 'string', Rule::in(Survey::allowedStatuses())],
             'starts_at' => 'nullable|date',
-            'ends_at' => 'nullable|date',
+            'ends_at' => 'nullable|date|after_or_equal:starts_at',
         ]);
 
         $data['public_token'] = Str::random(40);
@@ -63,9 +64,9 @@ class SurveyController extends Controller
             'group_id' => 'required|exists:groups,id',
             'year' => 'nullable|integer|min:2000|max:2100',
             'semester' => 'nullable|string|max:50',
-            'status' => 'required|string|in:draft,active,closed',
+            'status' => ['required', 'string', Rule::in(Survey::allowedStatuses())],
             'starts_at' => 'nullable|date',
-            'ends_at' => 'nullable|date',
+            'ends_at' => 'nullable|date|after_or_equal:starts_at',
         ]);
 
         $survey->update($data);

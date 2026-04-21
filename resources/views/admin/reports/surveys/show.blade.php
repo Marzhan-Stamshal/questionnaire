@@ -4,11 +4,11 @@
 @section('content')
     <div class="container">
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="page-head">
             <div>
-                <h3>📌 Отчёт анкеты #{{ $survey->id }}</h3>
-                <div class="text-muted">
-                    Группа: <b>{{ $survey->group->name ?? '' }}</b> |
+                <h3 class="page-title">Отчёт анкеты #{{ $survey->id }}</h3>
+                <div class="page-subtitle">
+                    {{ $survey->group->kind_label ?? 'Группа' }}: <b>{{ $survey->group->name ?? '' }}</b> |
                     Шаблон: <b>{{ $survey->template->title ?? '' }}</b>
                 </div>
             </div>
@@ -19,6 +19,12 @@
                 {{-- <a href="{{ route('admin.reports.surveys.comments', $survey->id) }}" class="btn btn-dark">💬 Комментарии</a> --}}
                 <a class="btn btn-outline-primary" href="{{ route('admin.reports.surveys.sessions', $survey->id) }}">
                     👤 Ответы по респондентам
+                </a>
+                <a class="btn btn-dark" href="{{ route('admin.reports.surveys.answers', $survey->id) }}">
+                    🔎 Ответы по вопросам
+                </a>
+                <a class="btn btn-danger" href="{{ route('admin.reports.surveys.risks', $survey->id) }}">
+                    🚨 Риски/Нарушения
                 </a>
                 <a href="{{ route('admin.reports.surveys.exportRaw', $survey->id) }}" class="btn btn-success">⬇ Raw CSV</a>
                 <a class="btn btn-success" href="{{ route('admin.exports.responses.csv', ['survey_id' => $survey->id]) }}">
@@ -32,8 +38,14 @@
             </div>
         </div>
 
+        <div class="mb-3">
+            <span class="chip">Сводка по анкете</span>
+            <span class="chip">Сравнение преподавателей</span>
+            <span class="chip">Средние по вопросам</span>
+        </div>
+
         {{-- Сравнение преподавателей внутри анкеты --}}
-        <div class="card shadow-sm mb-3">
+        <div class="card soft-card mb-3">
             <div class="card-header"><b>Сравнение преподавателей (внутри этой группы)</b></div>
             <div class="card-body">
 
@@ -63,14 +75,14 @@
         </div>
 
         {{-- Средние по вопросам --}}
-        <div class="card shadow-sm">
+        <div class="card soft-card">
             <div class="card-header"><b>Средние по вопросам (по всей анкете)</b></div>
             <div class="card-body table-responsive">
 
                 @if ($questionResult->count() === 0)
                     <div class="alert alert-warning mb-0">Нет данных</div>
                 @else
-                    <table class="table table-bordered align-middle">
+                    <table class="table table-clean align-middle">
                         <thead class="table-light">
                             <tr>
                                 <th>Вопрос</th>

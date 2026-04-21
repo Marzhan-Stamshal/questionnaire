@@ -4,8 +4,8 @@
 @section('content')
     <div class="container">
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3>📊 Рейтинг преподавателей</h3>
+        <div class="page-head">
+            <h3 class="page-title">Рейтинг преподавателей</h3>
             <div class="d-flex gap-2">
                 <a href="{{ route('admin.reports.teachers.export') }}" class="btn btn-success">⬇ Экспорт CSV</a>
                 <a href="{{ route('admin.surveys.index') }}" class="btn btn-secondary">Анкеты</a>
@@ -17,7 +17,7 @@
             Здесь данные агрегируются <b>по всем группам</b> (единая таблица результатов по преподавателю).
         </div>
 
-        <div class="card shadow-sm">
+        <div class="card soft-card">
             <div class="card-body table-responsive">
 
                 @if ($result->count() === 0)
@@ -25,7 +25,7 @@
                         Пока нет ответов для анализа.
                     </div>
                 @else
-                    <div class="card mb-3">
+                    <div class="card soft-card sticky-filters mb-3">
                         <div class="card-body">
                             <form method="GET" class="row g-2 align-items-end">
 
@@ -85,8 +85,8 @@
                         </div>
                     </div>
 
-                    <table class="table table-bordered align-middle">
-                        <thead class="table-light">
+                    <table class="table table-clean align-middle">
+                        <thead>
                             <tr>
                                 <th style="width:60px;">#</th>
                                 <th>Преподаватель</th>

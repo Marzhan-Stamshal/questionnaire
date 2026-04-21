@@ -19,6 +19,7 @@
                         <tr>
                             <th>ID</th>
                             <th>Название</th>
+                            <th>Тип</th>
                             <th>Факультет</th>
                             <th>ОП</th>
                             <th>Курс</th>
@@ -31,6 +32,7 @@
                             <tr>
                                 <td>{{ $g->id }}</td>
                                 <td><b>{{ $g->name }}</b></td>
+                                <td>{{ $g->kind_label }}</td>
                                 <td>{{ $g->faculty }}</td>
                                 <td>{{ $g->program }}</td>
                                 <td>{{ $g->course }}</td>

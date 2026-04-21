@@ -14,7 +14,7 @@
         <div class="card shadow-sm mb-3">
             <div class="card-body">
                 <h4 class="mb-1">{{ $survey->template->title }}</h4>
-                <div class="text-muted">Цикл: <b>{{ $survey->group->name }}</b></div>
+                <div class="text-muted">{{ $survey->group->kind_label }}: <b>{{ $survey->group->name }}</b></div>
             </div>
         </div>
 

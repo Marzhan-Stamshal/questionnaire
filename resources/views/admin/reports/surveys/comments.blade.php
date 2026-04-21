@@ -4,10 +4,10 @@
 @section('content')
     <div class="container">
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="page-head">
             <div>
-                <h3>💬 Комментарии анкеты #{{ $survey->id }}</h3>
-                <div class="text-muted">
+                <h3 class="page-title">Комментарии анкеты #{{ $survey->id }}</h3>
+                <div class="page-subtitle">
                     Группа: <b>{{ $survey->group->name ?? '' }}</b> |
                     Шаблон: <b>{{ $survey->template->title ?? '' }}</b>
                 </div>
@@ -18,14 +18,14 @@
             </a>
         </div>
 
-        <div class="card shadow-sm">
+        <div class="card soft-card">
             <div class="card-body">
 
                 @if ($rows->count() === 0)
                     <div class="alert alert-warning mb-0">Комментариев нет</div>
                 @else
                     @foreach ($rows as $r)
-                        <div class="border rounded p-3 mb-2">
+                        <div class="soft-card p-3 mb-2">
                             <div class="small text-muted">
                                 #{{ $r->id }} | {{ $r->created_at }}
                             </div>

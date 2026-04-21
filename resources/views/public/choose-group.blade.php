@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Выбор цикла — Анкета</title>
+    <title>Выбор группы/цикла — Анкета</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
@@ -14,7 +14,7 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <h4 class="mb-2">Преподаватель глазами студентов</h4>
-                <div class="text-muted mb-4">Выберите свой цикл, чтобы открыть анкету.</div>
+                <div class="text-muted mb-4">Выберите свою группу или цикл, чтобы открыть анкету.</div>
 
                 @if (session('error'))
                     <div class="alert alert-danger">{{ session('error') }}</div>
@@ -23,9 +23,9 @@
                 <form method="POST" action="{{ route('public.survey.goto') }}">
                     @csrf
 
-                    <label class="form-label">Цикл *</label>
+                    <label class="form-label">Группа / цикл *</label>
                     <select name="group_id" class="form-select mb-3" required>
-                        <option value="">-- выберите цикл --</option>
+                        <option value="">-- выберите группу/цикл --</option>
                         @foreach ($groups as $g)
                             <option value="{{ $g->id }}">{{ $g->name }}</option>
                         @endforeach

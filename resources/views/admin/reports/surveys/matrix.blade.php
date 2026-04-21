@@ -4,10 +4,10 @@
 @section('content')
     <div class="container">
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="page-head">
             <div>
-                <h3>🔥 Матрица оценок анкеты #{{ $survey->id }}</h3>
-                <div class="text-muted">
+                <h3 class="page-title">Матрица оценок анкеты #{{ $survey->id }}</h3>
+                <div class="page-subtitle">
                     Группа: <b>{{ $survey->group->name ?? '' }}</b> |
                     Шаблон: <b>{{ $survey->template->title ?? '' }}</b>
                 </div>
@@ -23,7 +23,7 @@
             </div>
         </div>
 
-        <div class="card shadow-sm">
+        <div class="card soft-card">
             <div class="card-body table-responsive">
 
                 @if ($matrixQuestions->count() === 0 || $teachers->count() === 0)
@@ -48,8 +48,8 @@
                         }
                     </style>
 
-                    <table class="table table-bordered align-middle">
-                        <thead class="table-light">
+                    <table class="table table-clean align-middle">
+                        <thead>
                             <tr>
                                 <th style="min-width: 340px;">Вопрос</th>
 
@@ -112,7 +112,7 @@
                             @endforeach
                         </tbody>
 
-                        <tfoot class="table-light">
+                        <tfoot>
                             <tr>
                                 <th>Средний по преподавателю</th>
                                 @foreach ($teachers as $t)
