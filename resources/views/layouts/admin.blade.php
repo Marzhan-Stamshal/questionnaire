@@ -179,6 +179,10 @@
                     📈 Единая аналитика
                 </a>
                 @if (auth()->check() && auth()->user()->can_view_sensitive_reports)
+                    <a class="list-group-item list-group-item-action {{ request()->is('admin/ai*') ? 'active' : '' }}"
+                        href="{{ route('admin.ai.index') }}">
+                        🤖 ИИ ассистент
+                    </a>
                     <a class="list-group-item list-group-item-action {{ request()->is('admin/audit/logs*') ? 'active' : '' }}"
                         href="{{ route('admin.audit.logs.index') }}">
                         🛡️ Журнал аудита

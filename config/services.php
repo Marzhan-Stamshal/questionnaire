@@ -30,4 +30,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'ai' => [
+        'endpoint' => env('AI_ENDPOINT', 'http://127.0.0.1:11434'),
+        'model' => env('AI_MODEL', 'qwen2.5:7b'),
+        'timeout' => env('AI_TIMEOUT', 120),
+    ],
+
 ];

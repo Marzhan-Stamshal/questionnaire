@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\BulkSurveyController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\AdminAuditLogController;
+use App\Http\Controllers\Admin\AiAssistantController;
 
 
 Route::middleware(['auth', 'admin', 'admin.audit'])->prefix('admin')->name('admin.')->group(function () {
@@ -43,6 +44,10 @@ Route::middleware(['auth', 'admin', 'admin.audit'])->prefix('admin')->name('admi
     Route::get('reports/teachers', [TeacherReportController::class, 'index'])->name('reports.teachers.index');
     Route::get('reports/teachers/{teacher}', [TeacherReportController::class, 'show'])->name('reports.teachers.show');
     Route::get('reports/analytics', [AnalyticsController::class, 'index'])->name('reports.analytics.index');
+    Route::middleware(['sensitive'])->group(function () {
+        Route::get('ai', [AiAssistantController::class, 'index'])->name('ai.index');
+        Route::post('ai/summarize', [AiAssistantController::class, 'summarize'])->name('ai.summarize');
+    });
 
     Route::resource('templates', SurveyTemplateController::class)->except(['show']);
     Route::resource('surveys', SurveyController::class)->except(['show']);
