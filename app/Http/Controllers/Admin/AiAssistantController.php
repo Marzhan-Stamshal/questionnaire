@@ -21,6 +21,7 @@ class AiAssistantController extends Controller
             'surveys' => $surveys,
             'surveyId' => $surveyId,
             'aiResult' => null,
+            'aiJson' => null,
             'aiError' => null,
             'health' => $health,
         ]);
@@ -39,14 +40,6 @@ class AiAssistantController extends Controller
             ->where('template_id', $survey->template_id)
             ->where('is_active', 1)
             ->whereIn('type', ['yes_no', 'yes_no_with_text'])
-            ->where(function ($q) {
-                $q->where('text', 'like', '%вымог%')
-                    ->orWhere('text', 'like', '%взят%')
-                    ->orWhere('text', 'like', '%домог%')
-                    ->orWhere('text', 'like', '%корруп%')
-                    ->orWhere('text', 'like', '%неофициаль%')
-                    ->orWhere('text', 'like', '%пара%');
-            })
             ->orderBy('sort_order')
             ->get();
 
@@ -79,7 +72,7 @@ class AiAssistantController extends Controller
             $comments = $items
                 ->filter(fn($r) => is_string($r->value_text) && trim($r->value_text) !== '')
                 ->pluck('value_text')
-                ->take(20)
+                ->take(3)
                 ->values();
 
             return [
@@ -94,6 +87,11 @@ class AiAssistantController extends Controller
             ];
         })->values();
 
+        $summary = $summary
+            ->sortByDesc('yes_count')
+            ->take(12)
+            ->values();
+
         $context = [
             'survey' => [
                 'id' => $survey->id,
@@ -107,6 +105,7 @@ class AiAssistantController extends Controller
         ];
 
         $aiResult = null;
+        $aiJson = null;
         $aiError = null;
         $health = $ai->health();
 
@@ -114,7 +113,8 @@ class AiAssistantController extends Controller
             if (!$health['ok']) {
                 throw new \RuntimeException('Нет подключения к Ollama');
             }
-            $aiResult = $ai->summarizeSurveyRisks($context);
+            $aiJson = $ai->summarizeSurveyRisks($context);
+            $aiResult = $aiJson['raw'] ?? null;
         } catch (\Throwable $e) {
             $aiError = 'Не удалось получить ответ от AI. Проверьте Ollama и модель. Текст ошибки: ' . $e->getMessage();
         }
@@ -123,6 +123,7 @@ class AiAssistantController extends Controller
             'surveys' => $surveys,
             'surveyId' => $survey->id,
             'aiResult' => $aiResult,
+            'aiJson' => $aiJson,
             'aiError' => $aiError,
             'health' => $health,
         ]);

@@ -41,35 +41,65 @@ class AiAgentService
         }
     }
 
-    public function summarizeSurveyRisks(array $context): string
+    public function summarizeSurveyRisks(array $context): array
     {
-        $system = 'Ты аналитик анонимных студенческих опросов. Пиши кратко, структурировано, без выдуманных фактов.';
+        $system = 'Ты аналитик анонимных студенческих опросов. Отвечай только по данным из контекста. Не выдумывай и не добавляй несуществующие вопросы.';
 
-        $user = "Сделай аналитическую сводку по рискам в анкете.\n"
-            . "Обязательные разделы:\n"
-            . "1) Ключевые сигналы риска\n"
-            . "2) Где нужно ручное внимание администратора\n"
-            . "3) Краткий план действий (3-5 пунктов)\n\n"
-            . "Данные анкеты (JSON):\n"
+        $user = "Сформируй JSON-ответ для админки.\n"
+            . "Формат JSON строго:\n"
+            . "{\n"
+            . "  \"key_signals\": [\"...\"],\n"
+            . "  \"manual_attention\": [\"...\"],\n"
+            . "  \"action_plan\": [\"...\"],\n"
+            . "  \"question_references\": [{\"question_code\":\"...\",\"question_text\":\"...\",\"why\":\"...\"}]\n"
+            . "}\n"
+            . "Ограничения:\n"
+            . "- Пиши только на русском языке.\n"
+            . "- В пунктах не более 18 слов.\n"
+            . "- В question_references указывай только вопросы из входного JSON.\n\n"
+            . "Входные данные (JSON):\n"
             . json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
-        return $this->chat($system, $user);
+        $raw = $this->chat($system, $user, true);
+        $parsed = json_decode($raw, true);
+        if (!is_array($parsed)) {
+            throw new \RuntimeException('AI вернул невалидный JSON');
+        }
+
+        return [
+            'key_signals' => array_values(array_filter((array) ($parsed['key_signals'] ?? []))),
+            'manual_attention' => array_values(array_filter((array) ($parsed['manual_attention'] ?? []))),
+            'action_plan' => array_values(array_filter((array) ($parsed['action_plan'] ?? []))),
+            'question_references' => array_values(array_filter((array) ($parsed['question_references'] ?? []), fn($x) => is_array($x))),
+            'raw' => $raw,
+        ];
     }
 
-    private function chat(string $system, string $user): string
+    private function chat(string $system, string $user, bool $jsonFormat = false): string
     {
         $endpoint = config('services.ai.endpoint', 'http://127.0.0.1:11434');
         $model = config('services.ai.model', 'qwen2.5:7b');
         $timeout = (int) config('services.ai.timeout', 120);
 
-        $response = Http::timeout($timeout)->post(rtrim($endpoint, '/') . '/api/chat', [
+        $payload = [
             'model' => $model,
             'stream' => false,
             'messages' => [
                 ['role' => 'system', 'content' => $system],
                 ['role' => 'user', 'content' => $user],
             ],
-        ]);
+            'options' => [
+                'temperature' => 0.2,
+                'num_predict' => 280,
+                'num_ctx' => 2048,
+            ],
+        ];
+
+        if ($jsonFormat) {
+            $payload['format'] = 'json';
+        }
+
+        $response = Http::timeout($timeout)->post(rtrim($endpoint, '/') . '/api/chat', $payload);
 
         if (!$response->ok()) {
             throw new \RuntimeException('Ошибка ответа от AI: HTTP ' . $response->status());

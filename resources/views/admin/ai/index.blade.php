@@ -61,9 +61,79 @@
             <div class="alert alert-danger">{{ $aiError }}</div>
         @endif
 
-        @if ($aiResult)
+        @if (!empty($aiJson))
             <div class="card soft-card">
                 <div class="card-header"><b>Результат ИИ-анализа</b></div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="mb-2">Ключевые сигналы риска</h6>
+                        @if (!empty($aiJson['key_signals']))
+                            <ul class="mb-0">
+                                @foreach ($aiJson['key_signals'] as $item)
+                                    <li>{{ $item }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <div class="text-muted">Нет пунктов</div>
+                        @endif
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="mb-2">Где нужно ручное внимание</h6>
+                        @if (!empty($aiJson['manual_attention']))
+                            <ul class="mb-0">
+                                @foreach ($aiJson['manual_attention'] as $item)
+                                    <li>{{ $item }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <div class="text-muted">Нет пунктов</div>
+                        @endif
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="mb-2">Краткий план действий</h6>
+                        @if (!empty($aiJson['action_plan']))
+                            <ol class="mb-0">
+                                @foreach ($aiJson['action_plan'] as $item)
+                                    <li>{{ $item }}</li>
+                                @endforeach
+                            </ol>
+                        @else
+                            <div class="text-muted">Нет пунктов</div>
+                        @endif
+                    </div>
+
+                    @if (!empty($aiJson['question_references']))
+                        <div>
+                            <h6 class="mb-2">На какие вопросы опирался ИИ</h6>
+                            <div class="table-responsive">
+                                <table class="table table-clean align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 140px;">Код</th>
+                                            <th>Вопрос</th>
+                                            <th style="width: 320px;">Почему важно</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($aiJson['question_references'] as $ref)
+                                            <tr>
+                                                <td>{{ $ref['question_code'] ?? '—' }}</td>
+                                                <td>{{ $ref['question_text'] ?? '—' }}</td>
+                                                <td>{{ $ref['why'] ?? '—' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @elseif ($aiResult)
+            <div class="card soft-card">
+                <div class="card-header"><b>Сырой ответ ИИ</b></div>
                 <div class="card-body">
                     <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit;">{{ $aiResult }}</pre>
                 </div>
